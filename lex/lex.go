@@ -67,6 +67,7 @@ func factor(lex *Lex) Expr {
 		return Value(n)
 	case scanner.Ident:
 		name := lex.TokenText()
+		lex.getToken()
 		if name == "quit" {
 			panic(name)
 		}
