@@ -8,6 +8,7 @@ import (
 func main() {
 	var lex lg.Lex
 	lex.Init(os.Stdin)
+	lg.InitFunc()
 	for {
 		if lg.TopLevel(&lex) {
 			break
