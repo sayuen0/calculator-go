@@ -33,6 +33,11 @@ const (
 	GT
 	LE
 	GE
+	BGN
+	WHL
+	DO
+	LET
+	IN
 )
 
 var keyTable = make(map[string]rune)
@@ -46,6 +51,11 @@ func initKeyTable() {
 	keyTable["and"] = AND
 	keyTable["or"] = OR
 	keyTable["not"] = NOT
+	keyTable["begin"] = BGN
+	keyTable["while"] = WHL
+	keyTable["do"] = DO
+	keyTable["let"] = LET
+	keyTable["in"] = IN
 }
 
 // 短絡演算子
@@ -230,6 +240,15 @@ func factor(lex *Lex) Expr {
 	case IF:
 		lex.getToken()
 		return makeSel(lex)
+	case BGN:
+		lex.getToken()
+		return makeBegin(lex)
+	case WHL:
+		lex.getToken()
+		return makeWhile(lex)
+	case LET:
+		lex.getToken()
+		return makeLet(lex)
 	default:
 		panic(fmt.Errorf("unexpected token: %v", lex.TokenText()))
 	}

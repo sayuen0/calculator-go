@@ -56,7 +56,7 @@ func TestAgn_Eval(t *testing.T) {
 				name: tt.fields.name,
 				expr: tt.fields.expr,
 			}
-			if got := a.Eval(); got != tt.want {
+			if got := a.Eval(nil); got != tt.want {
 				t.Errorf("Eval() = %v, want %v", got, tt.want)
 			}
 		})
@@ -105,7 +105,7 @@ func TestApp_Eval(t *testing.T) {
 				fn: tt.fields.fn,
 				xs: tt.fields.xs,
 			}
-			if got := a.Eval(); got != tt.want {
+			if got := a.Eval(nil); got != tt.want {
 				t.Errorf("Eval() = %v, want %v", got, tt.want)
 			}
 		})
@@ -264,15 +264,15 @@ func TestVariable_Eval(t *testing.T) {
 	}
 	resetGlobal()
 	// 事前の変数代入
-	newAgn(Variable("a"), Value(1)).Eval()
-	newAgn(Variable("b"), Value(3)).Eval()
-	newAgn(Variable("c"), Value(5)).Eval()
-	newAgn(Variable("d"), Value(10)).Eval()
+	newAgn(Variable("a"), Value(1)).Eval(nil)
+	newAgn(Variable("b"), Value(3)).Eval(nil)
+	newAgn(Variable("c"), Value(5)).Eval(nil)
+	newAgn(Variable("d"), Value(10)).Eval(nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// 事前に変数を代入していないといけない
 			// やらなくてもいいけど、代入してないならpanicするといいよね
-			if got := tt.v.Eval(); got != tt.want {
+			if got := tt.v.Eval(nil); got != tt.want {
 				t.Errorf("Eval() = %v, want %v", got, tt.want)
 			}
 		})

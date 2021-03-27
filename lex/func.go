@@ -36,7 +36,7 @@ func defineFunc(lex *Lex) {
 			if len(f.xs) != len(xs) {
 				panic(fmt.Errorf("wrong number of arguments %v", name))
 			}
-			body := expression(lex)
+			body := newBgn([]Expr{expression(lex)})
 			if lex.Token != END {
 				panic(fmt.Errorf("'end' expected"))
 			}
@@ -49,7 +49,7 @@ func defineFunc(lex *Lex) {
 		// 再帰呼び出し対応
 		f := newFuncU(name, xs, nil)
 		funcTable[name] = f
-		f.body = expression(lex)
+		f.body = newBgn([]Expr{expression(lex)})
 		if lex.Token != END {
 			delete(funcTable, name)
 			panic(fmt.Errorf("'end' expected"))

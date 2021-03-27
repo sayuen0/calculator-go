@@ -54,6 +54,7 @@ func (a *Agn) Eval(env *Env) Value {
 	return val
 }
 
+
 // 組み込み関数 引数の個数を持てるもの
 type Func interface {
 	Argc() int // 引数の個数
