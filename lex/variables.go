@@ -5,6 +5,10 @@ import (
 	"math"
 )
 
+func init() {
+	InitFunc()
+}
+
 // 変数
 type Variable string
 
@@ -17,8 +21,14 @@ func resetGlobal() {
 }
 
 // 変数の評価
-func (v Variable) Eval() Value {
-	val, ok := globalEnv[v]
+func (v Variable) Eval(env *Env) Value {
+	// 局所変数の探索
+	val, ok := lookUp(v, env)
+	if ok {
+		return val
+	}
+	// 大域変数の探索
+	val, ok = globalEnv[v]
 	if !ok {
 		panic(fmt.Errorf("unbound variable: %v", v))
 	}
@@ -35,10 +45,12 @@ func newAgn(v Variable, e Expr) *Agn {
 	return &Agn{v, e}
 }
 
-// 代入演算子の評価
-func (a *Agn) Eval() Value {
-	val := a.expr.Eval()
-	globalEnv[a.name] = val
+// 代入式の評価
+func (a *Agn) Eval(env *Env) Value {
+	val := a.expr.Eval(env)
+	if !update(a.name, val, env) {
+		globalEnv[a.name] = val
+	}
 	return val
 }
 
@@ -69,18 +81,18 @@ func newApp(fn Func, xs []Expr) *App {
 	return &App{fn: fn, xs: xs}
 }
 
-// 組み込み関数の評価
-func (a *App) Eval() Value {
+// 関数の評価(組み込み、ユーザ定義)
+func (a *App) Eval(env *Env) Value {
 	switch f := a.fn.(type) {
 	case Func1:
-		fn := f
-		x := float64(a.xs[0].Eval())
-		return Value(fn(x))
+		x := float64(a.xs[0].Eval(env))
+		return Value(f(x))
 	case Func2:
-		fn := f
-		x := float64(a.xs[0].Eval())
-		y := float64(a.xs[1].Eval())
-		return Value(fn(x, y))
+		x := float64(a.xs[0].Eval(env))
+		y := float64(a.xs[1].Eval(env))
+		return Value(f(x, y))
+	case *FuncU:
+		return f.body.Eval(makeBinding(f.xs, a.xs, env))
 	default:
 		panic(fmt.Errorf("function Eval error"))
 	}

@@ -6,15 +6,37 @@ import (
 	"text/scanner"
 )
 
+func init() {
+	initKeyTable()
+}
+
 // Lexとは、レキシカルアナライザ(字句解析プログラム)ジェネレータのこと
 type Lex struct {
 	scanner.Scanner
 	Token rune
 }
 
+const (
+	DEF = -(iota + 10)
+	END
+)
+
+var keyTable = make(map[string]rune)
+
+func initKeyTable() {
+	keyTable["def"] = DEF
+	keyTable["end"] = END
+}
+
 // 標準入力を1つ読み込んでruneを持つ
 func (s *Lex) getToken() {
 	s.Token = s.Scan()
+	if s.Token == scanner.Ident {
+		key, ok := keyTable[s.TokenText()]
+		if ok {
+			s.Token = key
+		}
+	}
 }
 
 // 引数の取得
@@ -158,11 +180,15 @@ func TopLevel(lex *Lex) (r bool) {
 	for {
 		fmt.Print("Calc> ")
 		lex.getToken()
-		e := expression(lex)
-		if lex.Token != ';' {
-			panic(fmt.Errorf("invalid expression"))
+		if lex.Token == DEF {
+			defineFunc(lex)
 		} else {
-			fmt.Println(e.Eval())
+			e := expression(lex)
+			if lex.Token != ';' {
+				panic(fmt.Errorf("invalid expression"))
+			} else {
+				fmt.Println(e.Eval(nil))
+			}
 		}
 	}
 	return r

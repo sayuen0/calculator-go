@@ -4,12 +4,53 @@ import "fmt"
 
 type Value float64
 
-// 評価できるものを式と呼ぶ
-type Expr interface {
-	Eval() Value
+// 局所変数の環境
+type Env struct {
+	name Variable
+	val  Value
+	next *Env
 }
 
-func (e Value) Eval() Value {
+func newEnv(name Variable, val Value, next *Env) *Env {
+	return &Env{name, val, next}
+}
+
+//  変数束縛
+func makeBinding(xs []Variable, es []Expr, env *Env) *Env {
+	var env1 *Env
+	for i := 0; i < len(xs); i++ {
+		env1 = newEnv(xs[i], es[i].Eval(env), env1)
+	}
+	return env1
+}
+
+// 構文木の型
+type Expr interface {
+	Eval(*Env) Value
+}
+
+// 局所変数の参照
+func lookUp(name Variable, env *Env) (Value, bool) {
+	for ; env != nil; env = env.next {
+		if name == env.name {
+			return env.val, true
+		}
+	}
+	return 0.0, false
+}
+
+// 局所変数の更新
+func update(name Variable, val Value, env *Env) bool {
+	for ; env != nil; env = env.next {
+		if name == env.name {
+			env.val = val
+			return true
+		}
+	}
+	return false
+}
+
+func (e Value) Eval(env *Env) Value {
 	return e
 }
 
@@ -24,8 +65,8 @@ func newOp1(code rune, e Expr) Expr {
 }
 
 // 単項演算子の評価
-func (e *Op1) Eval() Value {
-	v := e.expr.Eval()
+func (e *Op1) Eval(env *Env) Value {
+	v := e.expr.Eval(env)
 	if e.code == '-' {
 		v = -v
 	}
@@ -43,9 +84,9 @@ func newOp2(code rune, left, right Expr) Expr {
 }
 
 // 二項演算子の評価
-func (e *Op2) Eval() Value {
-	x := e.left.Eval()
-	y := e.right.Eval()
+func (e *Op2) Eval(env *Env) Value {
+	x := e.left.Eval(env)
+	y := e.right.Eval(env)
 	switch e.code {
 	case '+':
 		return x + y
