@@ -94,10 +94,10 @@ func term(lex *Lex) Expr {
 		switch lex.Token {
 		case '*':
 			lex.getToken()
-			e = NewOp2('*', e, factor(lex))
+			e = newOp2('*', e, factor(lex))
 		case '/':
 			lex.getToken()
-			e = NewOp2('/', e, factor(lex))
+			e = newOp2('/', e, factor(lex))
 		default:
 			return e
 		}
@@ -111,10 +111,10 @@ func expr1(lex *Lex) Expr {
 		switch lex.Token {
 		case '+':
 			lex.getToken()
-			e = NewOp2('+', e, term(lex))
+			e = newOp2('+', e, term(lex))
 		case '-':
 			lex.getToken()
-			e = NewOp2('-', e, term(lex))
+			e = newOp2('-', e, term(lex))
 		default:
 			return e
 		}

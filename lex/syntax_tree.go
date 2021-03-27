@@ -38,7 +38,7 @@ type Op2 struct {
 	left, right Expr
 }
 
-func NewOp2(code rune, left, right Expr) Expr {
+func newOp2(code rune, left, right Expr) Expr {
 	return &Op2{code, left, right}
 }
 
