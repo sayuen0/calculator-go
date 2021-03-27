@@ -29,24 +29,31 @@ func defineFunc(lex *Lex) {
 	name := lex.TokenText()
 	lex.getToken()
 	xs := getParameter(lex)
-	body := expression(lex)
-	if lex.Token != END {
-		panic(fmt.Errorf("'end' expected"))
-	}
 	v, ok := funcTable[name]
 	if ok {
 		switch f := v.(type) {
 		case *FuncU:
 			if len(f.xs) != len(xs) {
-				panic(fmt.Errorf("wrong number of arguments: %v", name))
+				panic(fmt.Errorf("wrong number of arguments %v", name))
+			}
+			body := expression(lex)
+			if lex.Token != END {
+				panic(fmt.Errorf("'end' expected"))
 			}
 			f.xs = xs
 			f.body = body
 		default:
-			panic(fmt.Errorf("%v is built-in function", name))
+			panic(fmt.Errorf("%v is build-in function", name))
 		}
 	} else {
-		funcTable[name] = newFuncU(name, xs, body)
+		// 再帰呼び出し対応
+		f := newFuncU(name, xs, nil)
+		funcTable[name] = f
+		f.body = expression(lex)
+		if lex.Token != END {
+			delete(funcTable, name)
+			panic(fmt.Errorf("'end' expected"))
+		}
 	}
 	fmt.Println(name)
 }

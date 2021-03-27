@@ -67,10 +67,16 @@ func newOp1(code rune, e Expr) Expr {
 // 単項演算子の評価
 func (e *Op1) Eval(env *Env) Value {
 	v := e.expr.Eval(env)
-	if e.code == '-' {
-		v = -v
+	switch e.code {
+	case '-':
+		return -v
+	case '+':
+		return v
+	case NOT:
+		return boolToValue(isFalse(v))
+	default:
+		panic(fmt.Errorf("invalid Op1 code"))
 	}
-	return v
 }
 
 // 二項演算子
@@ -96,6 +102,18 @@ func (e *Op2) Eval(env *Env) Value {
 		return x * y
 	case '/':
 		return x / y
+	case EQ:
+		return boolToValue(x == y)
+	case NE:
+		return boolToValue(x != y)
+	case LT:
+		return boolToValue(x < y)
+	case GT:
+		return boolToValue(x > y)
+	case LE:
+		return boolToValue(x <= y)
+	case GE:
+		return boolToValue(x >= y)
 	default:
 		panic(fmt.Errorf("invalid op code"))
 	}

@@ -2,6 +2,7 @@ package lex
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"text/scanner"
 )
@@ -16,9 +17,22 @@ type Lex struct {
 	Token rune
 }
 
+// キーワード
 const (
 	DEF = -(iota + 10)
 	END
+	IF
+	THEN
+	ELSE
+	NOT
+	AND
+	OR
+	EQ
+	NE
+	LT
+	GT
+	LE
+	GE
 )
 
 var keyTable = make(map[string]rune)
@@ -26,15 +40,122 @@ var keyTable = make(map[string]rune)
 func initKeyTable() {
 	keyTable["def"] = DEF
 	keyTable["end"] = END
+	keyTable["if"] = IF
+	keyTable["then"] = THEN
+	keyTable["else"] = ELSE
+	keyTable["and"] = AND
+	keyTable["or"] = OR
+	keyTable["not"] = NOT
+}
+
+// 短絡演算子
+type Ops struct {
+	code        rune
+	left, right Expr
+}
+
+func newOps(code rune, left, right Expr) Expr {
+	return &Ops{code, left, right}
+}
+
+// 短絡演算子の評価
+func (e *Ops) Eval(env *Env) Value {
+	x := e.left.Eval(env)
+	switch e.code {
+	case AND:
+		if isTrue(x) {
+			return e.right.Eval(env)
+		}
+		return x
+	case OR:
+		if isTrue(x) {
+			return x
+		}
+		return e.right.Eval(env)
+	default:
+		panic(fmt.Errorf("invalid Ops code"))
+	}
+}
+
+// if
+type Sel struct {
+	testForm, thenForm, elseForm Expr
+}
+
+func newSel(testForm, thenForm, elseForm Expr) *Sel {
+	return &Sel{testForm, thenForm, elseForm}
+}
+
+// if式の評価
+func (e *Sel) Eval(env *Env) Value {
+	if isTrue(e.testForm.Eval(env)) {
+		return e.thenForm.Eval(env)
+	}
+	return e.elseForm.Eval(env)
+}
+
+// ifの処理
+func makeSel(lex *Lex) Expr {
+	testForm := expression(lex)
+	if lex.Token == THEN {
+		lex.getToken()
+		thenForm := expression(lex)
+		switch lex.Token {
+		case ELSE:
+			lex.getToken()
+			elseForm := expression(lex)
+			if lex.Token != END {
+				panic(fmt.Errorf("'end' expected"))
+			}
+			lex.getToken()
+			return newSel(testForm, thenForm, elseForm)
+		case END:
+			lex.getToken()
+			return newSel(testForm, thenForm, Value(0.0))
+		default:
+			panic(fmt.Errorf("'else' or 'end' expected"))
+		}
+	} else {
+		panic(fmt.Errorf("'then' expected"))
+	}
+	// このブロックには到達しない
+	return nil
 }
 
 // 標準入力を1つ読み込んでruneを持つ
-func (s *Lex) getToken() {
-	s.Token = s.Scan()
-	if s.Token == scanner.Ident {
-		key, ok := keyTable[s.TokenText()]
+func (lex *Lex) getToken() {
+	lex.Token = lex.Scan()
+	switch lex.Token {
+	case scanner.Ident:
+		key, ok := keyTable[lex.TokenText()]
 		if ok {
-			s.Token = key
+			lex.Token = key
+		}
+	case '=':
+		if lex.Peek() == '=' {
+			lex.Next()
+			lex.Token = EQ
+		}
+	case '!':
+		if lex.Peek() == '=' {
+			lex.Next()
+			lex.Token = NE
+		} else {
+			lex.Token = NOT
+		}
+	case '<':
+		if lex.Peek() == '=' {
+			lex.Next()
+			lex.Token = LE
+		} else {
+			lex.Token = LT
+		}
+	case '>':
+		if lex.Peek() == '=' {
+			lex.Next()
+			lex.Token = GE
+		} else {
+			lex.Token = GT
 		}
 	}
 }
@@ -103,6 +224,12 @@ func factor(lex *Lex) Expr {
 		} else {
 			return Variable(name)
 		}
+	case NOT:
+		lex.getToken()
+		return newOp1(NOT, factor(lex))
+	case IF:
+		lex.getToken()
+		return makeSel(lex)
 	default:
 		panic(fmt.Errorf("unexpected token: %v", lex.TokenText()))
 	}
@@ -126,8 +253,36 @@ func term(lex *Lex) Expr {
 	}
 }
 
-// 式
+// 論理演算子
 func expr1(lex *Lex) Expr {
+	e := expr2(lex)
+	for {
+		x := lex.Token
+		switch x {
+		case AND, OR:
+			lex.getToken()
+			e = newOps(x, e, expr2(lex))
+		default:
+			return e
+		}
+	}
+}
+
+// 比較演算子
+func expr2(lex *Lex) Expr {
+	e := expr3(lex)
+	x := lex.Token
+	switch x {
+	case EQ, NE, LT, GT, LE, GE:
+		lex.getToken()
+		return newOp2(x, e, expr3(lex))
+	default:
+		return e
+	}
+}
+
+// 式
+func expr3(lex *Lex) Expr {
 	e := term(lex)
 	for {
 		switch lex.Token {
@@ -171,8 +326,10 @@ func TopLevel(lex *Lex) (r bool) {
 				r = true
 			} else {
 				fmt.Fprintln(os.Stderr, err)
-				for lex.Token != ';' {
-					lex.getToken()
+				for {
+					c:= lex.Peek()
+					if c == '\n' {break }
+					lex.Next()
 				}
 			}
 		}
@@ -185,6 +342,7 @@ func TopLevel(lex *Lex) (r bool) {
 		} else {
 			e := expression(lex)
 			if lex.Token != ';' {
+				log.Println(lex.TokenText())
 				panic(fmt.Errorf("invalid expression"))
 			} else {
 				fmt.Println(e.Eval(nil))
