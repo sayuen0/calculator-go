@@ -167,4 +167,3 @@ func TopLevel(lex *Lex) (r bool) {
 	}
 	return r
 }
-

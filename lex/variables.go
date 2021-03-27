@@ -11,6 +11,11 @@ type Variable string
 // 大域的な環境
 var globalEnv = make(map[Variable]Value)
 
+// テスト用
+func resetGlobal() {
+	globalEnv = make(map[Variable]Value)
+}
+
 // 変数の評価
 func (v Variable) Eval() Value {
 	val, ok := globalEnv[v]
@@ -102,4 +107,5 @@ func InitFunc() {
 	funcTable["log"] = Func1(math.Log)
 	funcTable["log10"] = Func1(math.Log10)
 	funcTable["log2"] = Func1(math.Log2)
+	funcTable["abs"] = Func1(math.Abs)
 }

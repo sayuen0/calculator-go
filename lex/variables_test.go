@@ -17,7 +17,6 @@ func TestAgn_Eval(t *testing.T) {
 		fields fields
 		want   Value
 	}{
-		// TODO: Add test cases.
 		{
 			name: "case1",
 			fields: fields{
@@ -49,14 +48,6 @@ func TestAgn_Eval(t *testing.T) {
 				expr: newOp2('*', Variable("a"), Variable("b")),
 			},
 			want: Value(-1),
-		},
-		{
-			name: "case5",
-			fields: fields{
-				name: Variable("e"),
-				expr: newOp2('+', Value(0), Value(334)),
-			},
-			want: Value(114514),
 		},
 	}
 	for _, tt := range tests {
@@ -250,8 +241,33 @@ func TestVariable_Eval(t *testing.T) {
 		v    Variable
 		want Value
 	}{
-		// TODO: Add test cases.
+		{
+			name: "case1",
+			v:    Variable("a"),
+			want: 1,
+		},
+		{
+			name: "case2",
+			v:    Variable("b"),
+			want: 3,
+		},
+		{
+			name: "case3",
+			v:    Variable("c"),
+			want: 5,
+		},
+		{
+			name: "case4",
+			v:    Variable("d"),
+			want: 10,
+		},
 	}
+	resetGlobal()
+	// 事前の変数代入
+	newAgn(Variable("a"), Value(1)).Eval()
+	newAgn(Variable("b"), Value(3)).Eval()
+	newAgn(Variable("c"), Value(5)).Eval()
+	newAgn(Variable("d"), Value(10)).Eval()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// 事前に変数を代入していないといけない
@@ -304,11 +320,22 @@ func Test_newApp(t *testing.T) {
 		args args
 		want *App
 	}{
-		// TODO: Add test cases.
+		{
+			name: "case1",
+			args: args{
+				fn: nil,
+				xs: nil,
+			},
+			want: &App{
+				fn: nil,
+				xs: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newApp(tt.args.fn, tt.args.xs); !reflect.DeepEqual(got, tt.want) {
+			got := newApp(tt.args.fn, tt.args.xs)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("newApp() = %v, want %v", got, tt.want)
 			}
 		})
